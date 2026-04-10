@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>생강밭 플래너 — 파종 면적 계산기</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffdf7;
+      --border: #d6c89a;
+      --accent: #5a7a2e;
+      --accent-light: #7fa844;
+      --accent-dark: #3d5520;
+      --text: #2d2a1e;
+      --muted: #6b6347;
+      --result-bg: #eaf2de;
+      --result-border: #a8c878;
+      --warn: #8b6914;
+      --warn-bg: #fdf6e0;
+      --warn-border: #e0c87a;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--accent-dark);
+      color: #fff;
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p  { margin-top: .4rem; font-size: .9rem; opacity: .8; }
+
+    /* ── Layout ── */
+    main {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem 3rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+      border-bottom: 2px solid var(--accent-light);
+      padding-bottom: .5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── Input Grid ── */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.2rem;
+    }
+    .field label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: .3rem;
+    }
+    .field .hint {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: .25rem;
+    }
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(90,122,46,.15); }
+    .input-wrap input[type="number"] {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: .55rem .75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: transparent;
+      min-width: 0;
+    }
+    .input-wrap .unit {
+      padding: 0 .75rem;
+      font-size: .8rem;
+      color: var(--muted);
+      background: #f7f4ec;
+      border-left: 1px solid var(--border);
+      white-space: nowrap;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Slider ── */
+    .slider-field { display: flex; flex-direction: column; gap: .3rem; }
+    .slider-row   { display: flex; align-items: center; gap: .75rem; }
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .slider-val {
+      min-width: 4rem;
+      text-align: right;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--accent-dark);
+    }
+
+    /* ── Diagram ── */
+    .diagram-wrap {
+      overflow-x: auto;
+      margin-top: .5rem;
+    }
+    #ridge-svg { display: block; margin: 0 auto; }
+
+    /* ── Results ── */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .result-item {
+      background: var(--result-bg);
+      border: 1px solid var(--result-border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+    }
+    .result-item .r-label { font-size: .78rem; font-weight: 600; color: var(--accent-dark); margin-bottom: .3rem; }
+    .result-item .r-value { font-size: 1.5rem; font-weight: 700; color: var(--accent-dark); line-height: 1.1; }
+    .result-item .r-unit  { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+
+    .result-item.highlight {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+    .result-item.highlight .r-label,
+    .result-item.highlight .r-value,
+    .result-item.highlight .r-unit { color: #fff; }
+
+    /* ── Advice box ── */
+    .advice {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      font-size: .85rem;
+      color: var(--warn);
+      line-height: 1.7;
+    }
+    .advice strong { font-weight: 700; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+      padding: 1.5rem 0 2rem;
+    }
+
+    @media (max-width: 520px) {
+      header h1 { font-size: 1.35rem; }
+      .result-item .r-value { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌱 생강밭 플래너</h1>
+  <p>종자량과 파종 간격을 입력하면 필요 재배 면적을 자동으로 계산합니다</p>
+</header>
+
+<main>
+
+  <!-- ① 종자 정보 -->
+  <div class="card">
+    <h2>① 종자 정보</h2>
+    <div class="input-grid">
+      <div class="field">
+        <label>총 종자량</label>
+        <div class="input-wrap">
+          <input type="number" id="totalSeedKg" value="2100" min="1" step="10" />
+          <span class="unit">kg</span>
+        </div>
+        <div class="hint">예) 210상자 × 10kg = 2,100kg</div>
+      </div>
+      <div class="field">
+        <label>종자 1개 분할 무게</label>
+        <div class="input-wrap">
+          <input type="number" id="seedCutWeightG" value="50" min="10" max="200" step="5" />
+          <span class="unit">g</span>
+        </div>
+        <div class="hint">통상 40~60g 사이로 분할</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 파종 간격 -->
+  <div class="card">
+    <h2>② 파종 간격 설정</h2>
+    <div class="input-grid">
+
+      <div class="field slider-field">
+        <label>골(통로) 폭</label>
+        <div class="slider-row">
+          <input type="range" id="furrowWidthCm" min="20" max="60" step="5" value="30" />
+          <span class="slider-val"><span id="furrowVal">30</span> cm</span>
+        </div>
+      </div>
+
+      <div class="field slider-field">
+        <label>두둑 가장자리 여백 (한쪽)</label>
+        <div class="slider-row">
+          <input type="range" id="ridgeEdgeCm" min="10" max="40" step="5" value="30" />
+          <span class="slider-val"><span id="ridgeEdgeVal">30</span> cm</span>
+        </div>
+      </div>
+
+      <div class="field slider-field">
+        <label>줄 간격 (두 줄 사이)</label>
+        <div class="slider-row">
+          <input type="range" id="rowSpacingCm" min="20" max="60" step="5" value="30" />
+          <span class="slider-val"><span id="rowSpacingVal">30</span> cm</span>
+        </div>
+      </div>
+
+      <div class="field slider-field">
+        <label>포기 간격 (주간 거리)</label>
+        <div class="slider-row">
+          <input type="range" id="plantSpacingCm" min="20" max="60" step="5" value="30" />
+          <span class="slider-val"><span id="plantSpacingVal">30</span> cm</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ③ 이랑 단면 다이어그램 -->
+  <div class="card">
+    <h2>③ 이랑 단면 구조 (단위: cm)</h2>
+    <div class="diagram-wrap">
+      <svg id="ridge-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <!-- ④ 계산 결과 -->
+  <div class="card">
+    <h2>④ 계산 결과</h2>
+    <div class="results-grid">
+      <div class="result-item">
+        <div class="r-label">총 종자 개수</div>
+        <div class="r-value" id="res-count">42,000</div>
+        <div class="r-unit">개</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">이랑 1단위 총 폭</div>
+        <div class="r-value" id="res-ridge-width">120</div>
+        <div class="r-unit">cm (1.2 m)</div>
+      </div>
+      <div class="result-item">
+        <div class="r-label">종자 1개당 점유 면적</div>
+        <div class="r-value" id="res-per-seed">0.18</div>
+        <div class="r-unit">m²/개</div>
+      </div>
+      <div class="result-item highlight">
+        <div class="r-label">필요 재배 면적</div>
+        <div class="r-value" id="res-area-m2">7,560</div>
+        <div class="r-unit">m²</div>
+      </div>
+      <div class="result-item highlight">
+        <div class="r-label">필요 재배 면적</div>
+        <div class="r-value" id="res-area-pyeong">2,287</div>
+        <div class="r-unit">평</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ 실용 조언 -->
+  <div class="advice" id="advice-box">
+    <!-- JS로 채움 -->
+  </div>
+
+</main>
+
+<footer>생강밭 플래너 · floodpark/Ginger-Field-Planner</footer>
+
+<script>
+  // ── 입력 요소 참조 ──
+  const inputs = {
+    totalSeedKg:    document.getElementById('totalSeedKg'),
+    seedCutWeightG: document.getElementById('seedCutWeightG'),
+    furrowWidthCm:  document.getElementById('furrowWidthCm'),
+    ridgeEdgeCm:    document.getElementById('ridgeEdgeCm'),
+    rowSpacingCm:   document.getElementById('rowSpacingCm'),
+    plantSpacingCm: document.getElementById('plantSpacingCm'),
+  };
+  const displays = {
+    furrowVal:      document.getElementById('furrowVal'),
+    ridgeEdgeVal:   document.getElementById('ridgeEdgeVal'),
+    rowSpacingVal:  document.getElementById('rowSpacingVal'),
+    plantSpacingVal:document.getElementById('plantSpacingVal'),
+  };
+
+  // 슬라이더 ↔ 표시값 동기화
+  inputs.furrowWidthCm.addEventListener('input',  () => { displays.furrowVal.textContent      = inputs.furrowWidthCm.value;  recalc(); });
+  inputs.ridgeEdgeCm.addEventListener('input',    () => { displays.ridgeEdgeVal.textContent    = inputs.ridgeEdgeCm.value;    recalc(); });
+  inputs.rowSpacingCm.addEventListener('input',   () => { displays.rowSpacingVal.textContent   = inputs.rowSpacingCm.value;   recalc(); });
+  inputs.plantSpacingCm.addEventListener('input', () => { displays.plantSpacingVal.textContent = inputs.plantSpacingCm.value; recalc(); });
+  inputs.totalSeedKg.addEventListener('input',    recalc);
+  inputs.seedCutWeightG.addEventListener('input', recalc);
+
+  // ── 계산 ──
+  function recalc() {
+    const totalKg    = parseFloat(inputs.totalSeedKg.value)    || 0;
+    const cutG       = parseFloat(inputs.seedCutWeightG.value) || 1;
+    const furrow     = parseFloat(inputs.furrowWidthCm.value)  || 0;
+    const ridgeEdge  = parseFloat(inputs.ridgeEdgeCm.value)    || 0;
+    const rowSpacing = parseFloat(inputs.rowSpacingCm.value)   || 0;
+    const plantSp    = parseFloat(inputs.plantSpacingCm.value) || 1;
+
+    // 총 종자 개수
+    const totalCount = (totalKg * 1000) / cutG;
+
+    // 이랑 1단위 폭 = 골 + 두둑가장자리×2 + 줄간격
+    const ridgeWidthCm = furrow + ridgeEdge * 2 + rowSpacing;
+    const ridgeWidthM  = ridgeWidthCm / 100;
+
+    // 종자 1개당 면적 (2줄이 ridgeWidthM * plantSpacingM 공간을 나눔)
+    const plantSpM   = plantSp / 100;
+    const perSeedM2  = (ridgeWidthM * plantSpM) / 2;
+
+    // 총 면적
+    const totalM2     = totalCount * perSeedM2;
+    const totalPyeong = totalM2 * 0.3025;
+
+    // 결과 표시
+    document.getElementById('res-count').textContent       = fmt(totalCount, 0);
+    document.getElementById('res-ridge-width').textContent = fmt(ridgeWidthCm, 0);
+    document.getElementById('res-per-seed').textContent    = fmt(perSeedM2, 4);
+    document.getElementById('res-area-m2').textContent     = fmt(totalM2, 0);
+    document.getElementById('res-area-pyeong').textContent = fmt(totalPyeong, 0);
+
+    // cm 표시 업데이트
+    document.getElementById('res-ridge-width').parentElement.querySelector('.r-unit').textContent =
+      `cm (${(ridgeWidthCm/100).toFixed(2)} m)`;
+
+    // 다이어그램 업데이트
+    drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp);
+
+    // 실용 조언
+    updateAdvice(totalPyeong);
+  }
+
+  function fmt(n, dec) {
+    if (!isFinite(n)) return '—';
+    return n.toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+
+  // ── SVG 이랑 단면 다이어그램 ──
+  function drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp) {
+    const svg = document.getElementById('ridge-svg');
+    const PAD = 40;       // 좌우 여백
+    const TOP = 30;       // 상단 여백 (라벨용)
+    const BOT = 50;       // 하단 여백 (치수선)
+    const H   = 80;       // 이랑 높이
+    const SCALE = 2.2;    // px/cm
+
+    const totalCm = furrow + ridgeEdge * 2 + rowSpacing;
+    const W = totalCm * SCALE + PAD * 2;
+    const svgH = TOP + H + BOT + 30;
+
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', svgH);
+    svg.setAttribute('viewBox', `0 0 ${W} ${svgH}`);
+
+    // 각 구간 x 위치 (px)
+    const x0 = PAD;                                  // 골 시작
+    const x1 = x0 + furrow * SCALE;                  // 두둑 왼쪽 가장자리 끝
+    const x2 = x1 + ridgeEdge * SCALE;               // 왼쪽 포기 위치
+    const x3 = x2 + rowSpacing * SCALE;              // 오른쪽 포기 위치
+    const x4 = x3 + ridgeEdge * SCALE;               // 두둑 오른쪽 가장자리 끝 (= 골 시작)
+
+    const groundY = TOP + H;
+
+    // 색상
+    const C = {
+      furrow: '#c8b87a',
+      ridge:  '#a0c060',
+      plant:  '#3d5520',
+      dim:    '#8a7a50',
+      text:   '#2d2a1e',
+    };
+
+    let html = '';
+
+    // 배경 (골)
+    html += rect(x0, TOP, x4 - x0, H, C.furrow, 0.4);
+
+    // 두둑 (왼쪽 가장자리 + 줄간격 + 오른쪽 가장자리)
+    html += rect(x1, TOP, x3 - x1, H, C.ridge, 1);
+
+    // 골 치수선
+    html += dimLine(x0, x1, groundY + 15, `${furrow}cm`, C.dim);
+
+    // 두둑 왼 가장자리
+    html += dimLine(x1, x2, groundY + 15, `${ridgeEdge}cm`, C.dim);
+
+    // 줄 간격
+    html += dimLine(x2, x3, groundY + 15, `${rowSpacing}cm`, C.dim);
+
+    // 두둑 오른 가장자리
+    html += dimLine(x3, x4, groundY + 15, `${ridgeEdge}cm`, C.dim);
+
+    // 총 폭
+    html += dimLine(x0, x4, groundY + 38, `전체 ${totalCm}cm`, '#3d5520');
+
+    // 생강 포기 마커
+    html += plantMarker(x2, TOP + H * 0.38, 8, C.plant);
+    html += plantMarker(x3, TOP + H * 0.38, 8, C.plant);
+
+    // 라벨 (위)
+    html += label((x0 + x1) / 2, TOP - 8, '골', C.dim);
+    html += label((x1 + x3) / 2, TOP - 8, '두둑', '#3d5520');
+
+    // 포기 간격 화살표 (수직 방향 설명 텍스트)
+    html += `<text x="${W/2}" y="${svgH - 4}" text-anchor="middle"
+      font-size="11" fill="${C.dim}" font-family="inherit">
+      ↕ 포기 간격(주간 거리): ${plantSp}cm &nbsp;|&nbsp; 이랑 폭: ${totalCm}cm, 2줄 심기
+    </text>`;
+
+    svg.innerHTML = html;
+  }
+
+  function rect(x, y, w, h, fill, opacity) {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" fill-opacity="${opacity}" rx="3"/>`;
+  }
+
+  function dimLine(x1, x2, y, text, color) {
+    const mx = (x1 + x2) / 2;
+    return `
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="${mx}" y="${y - 4}" text-anchor="middle" font-size="10" fill="${color}" font-family="inherit">${text}</text>
+      <defs>
+        <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M1,1 L5,3 L1,5" fill="none" stroke="${color}" stroke-width="1"/>
+        </marker>
+      </defs>`;
+  }
+
+  function plantMarker(cx, cy, r, color) {
+    return `
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity=".85"/>
+      <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="9" fill="#fff" font-family="inherit">생</text>`;
+  }
+
+  function label(x, y, text, color) {
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${color}" font-weight="600" font-family="inherit">${text}</text>`;
+  }
+
+  // ── 실용 조언 ──
+  function updateAdvice(pyeong) {
+    const extra10 = Math.round(pyeong * 1.10);
+    const extra15 = Math.round(pyeong * 1.15);
+    document.getElementById('advice-box').innerHTML = `
+      <strong>💡 실용 참고사항</strong><br>
+      위 면적(${fmt(pyeong,0)}평)은 순수 재배 이론 면적입니다.
+      농기계 선회 공간(헤드랜드), 작업로, 배수로 등을 고려하면
+      실제 부지는 <strong>약 10~15% 여유</strong>를 두는 것이 효율적입니다.<br>
+      → 권장 확보 면적: <strong>${fmt(extra10,0)} ~ ${fmt(extra15,0)}평</strong>
+    `;
+  }
+
+  // ── 초기 실행 ──
+  recalc();
+</script>
+</body>
+</html>
