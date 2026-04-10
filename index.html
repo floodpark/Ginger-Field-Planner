@@ -130,12 +130,38 @@
       color: var(--accent-dark);
     }
 
-    /* ── Diagram ── */
+    /* ── Diagram tabs ── */
+    .diagram-tabs {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .diagram-tabs button {
+      flex: 1;
+      padding: .45rem .75rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .diagram-tabs button.active {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: #fff;
+    }
+    .diagram-panel { display: none; }
+    .diagram-panel.active { display: block; }
+
     .diagram-wrap {
       overflow-x: auto;
       margin-top: .5rem;
     }
-    #ridge-svg { display: block; margin: 0 auto; }
+    #ridge-svg, #topview-svg { display: block; margin: 0 auto; }
 
     /* ── Results ── */
     .results-grid {
@@ -259,11 +285,22 @@
     </div>
   </div>
 
-  <!-- ③ 이랑 단면 다이어그램 -->
+  <!-- ③ 이랑 구조 다이어그램 -->
   <div class="card">
-    <h2>③ 이랑 단면 구조 (단위: cm)</h2>
-    <div class="diagram-wrap">
-      <svg id="ridge-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <h2>③ 이랑 구조 시각화 (단위: cm)</h2>
+    <div class="diagram-tabs">
+      <button id="tab-section" class="active" onclick="switchTab('section')">단면도 — 가로 구조</button>
+      <button id="tab-topview" onclick="switchTab('topview')">평면도 — 포기 간격</button>
+    </div>
+    <div id="panel-section" class="diagram-panel active">
+      <div class="diagram-wrap">
+        <svg id="ridge-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+    <div id="panel-topview" class="diagram-panel">
+      <div class="diagram-wrap">
+        <svg id="topview-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
     </div>
   </div>
 
@@ -370,6 +407,7 @@
 
     // 다이어그램 업데이트
     drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp);
+    drawTopView(furrow, ridgeEdge, rowSpacing, plantSp);
 
     // 실용 조언
     updateAdvice(totalPyeong);
@@ -479,6 +517,157 @@
 
   function label(x, y, text, color) {
     return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${color}" font-weight="600" font-family="inherit">${text}</text>`;
+  }
+
+  // ── 탭 전환 ──
+  function switchTab(name) {
+    document.getElementById('tab-section').classList.toggle('active', name === 'section');
+    document.getElementById('tab-topview').classList.toggle('active', name === 'topview');
+    document.getElementById('panel-section').classList.toggle('active', name === 'section');
+    document.getElementById('panel-topview').classList.toggle('active', name === 'topview');
+  }
+
+  // ── SVG 평면도 (탑뷰) ──
+  function drawTopView(furrow, ridgeEdge, rowSpacing, plantSp) {
+    const svg = document.getElementById('topview-svg');
+
+    // 표시할 이랑 수 / 포기 수 (고정, 샘플 시각화)
+    const RIDGES  = 2;   // 이랑 2개 나란히
+    const PLANTS  = 5;   // 포기 5개 (길이 방향)
+    const SCALE   = 2.2; // px/cm
+    const PAD_L   = 52;  // 왼쪽 여백 (치수선)
+    const PAD_T   = 50;  // 위쪽 여백 (치수선)
+    const PAD_R   = 20;
+    const PAD_B   = 20;
+
+    const ridgeW  = furrow + ridgeEdge * 2 + rowSpacing; // 이랑 1단위 폭 cm
+    const totalW  = ridgeW * RIDGES;                     // 전체 가로 cm
+    const totalH  = plantSp * PLANTS;                    // 전체 세로 cm
+
+    const W  = totalW  * SCALE + PAD_L + PAD_R;
+    const H  = totalH  * SCALE + PAD_T + PAD_B;
+
+    svg.setAttribute('width',   Math.max(W, 300));
+    svg.setAttribute('height',  H);
+    svg.setAttribute('viewBox', `0 0 ${Math.max(W, 300)} ${H}`);
+
+    const C = {
+      furrow:  '#d4c080',
+      ridge:   '#b8d878',
+      ridgeDk: '#90b850',
+      plant:   '#3d5520',
+      dim:     '#8a7a50',
+      dimGreen:'#4a7a20',
+      text:    '#2d2a1e',
+    };
+
+    let h = `<defs>
+      <marker id="arH" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M1,1 L5,3 L1,5" fill="none" stroke="${C.dim}" stroke-width="1"/>
+      </marker>
+      <marker id="arHg" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M1,1 L5,3 L1,5" fill="none" stroke="${C.dimGreen}" stroke-width="1"/>
+      </marker>
+    </defs>`;
+
+    // ── 이랑별 배경 그리기 ──
+    for (let r = 0; r < RIDGES; r++) {
+      const rx = PAD_L + r * ridgeW * SCALE;
+
+      // 골 (왼쪽)
+      h += `<rect x="${rx}" y="${PAD_T}" width="${furrow * SCALE}" height="${totalH * SCALE}"
+              fill="${C.furrow}" fill-opacity=".55"/>`;
+
+      // 두둑
+      const dx = rx + furrow * SCALE;
+      const dw = (ridgeEdge * 2 + rowSpacing) * SCALE;
+      h += `<rect x="${dx}" y="${PAD_T}" width="${dw}" height="${totalH * SCALE}"
+              fill="${C.ridge}" fill-opacity=".8"/>`;
+
+      // 포기 위치 줄 (두 줄)
+      const col1x = rx + (furrow + ridgeEdge)               * SCALE; // 왼쪽 줄
+      const col2x = rx + (furrow + ridgeEdge + rowSpacing)  * SCALE; // 오른쪽 줄
+
+      for (let p = 0; p < PLANTS; p++) {
+        const py = PAD_T + (p + 0.5) * plantSp * SCALE;
+        // 포기 원
+        h += `<circle cx="${col1x}" cy="${py}" r="7" fill="${C.plant}" opacity=".85"/>`;
+        h += `<text x="${col1x}" y="${py+4}" text-anchor="middle" font-size="8"
+                fill="#fff" font-family="inherit">생</text>`;
+        h += `<circle cx="${col2x}" cy="${py}" r="7" fill="${C.plant}" opacity=".85"/>`;
+        h += `<text x="${col2x}" y="${py+4}" text-anchor="middle" font-size="8"
+                fill="#fff" font-family="inherit">생</text>`;
+
+        // 포기 간격 세로 치수선 (첫 번째 이랑 왼쪽 줄 기준, 첫 구간만)
+        if (r === 0 && p < PLANTS - 1) {
+          const y1 = PAD_T + (p + 0.5) * plantSp * SCALE;
+          const y2 = PAD_T + (p + 1.5) * plantSp * SCALE;
+          const dimX = PAD_L - 28;
+          h += `<line x1="${dimX}" y1="${y1}" x2="${dimX}" y2="${y2}"
+                  stroke="${C.dimGreen}" stroke-width="1.2"
+                  marker-start="url(#arHg)" marker-end="url(#arHg)"/>`;
+          if (p === Math.floor((PLANTS - 1) / 2)) {
+            h += `<text x="${dimX - 4}" y="${(y1+y2)/2 + 4}" text-anchor="end"
+                    font-size="10" fill="${C.dimGreen}" font-weight="600"
+                    font-family="inherit">${plantSp}cm</text>`;
+            h += `<text x="${dimX - 4}" y="${(y1+y2)/2 - 5}" text-anchor="end"
+                    font-size="9" fill="${C.dimGreen}"
+                    font-family="inherit">포기</text>`;
+          }
+        }
+      }
+
+      // 세로 구분선 (이랑 경계)
+      if (r > 0) {
+        h += `<line x1="${rx}" y1="${PAD_T}" x2="${rx}" y2="${PAD_T + totalH * SCALE}"
+                stroke="${C.furrow}" stroke-width="1" stroke-dasharray="4,3"/>`;
+      }
+    }
+
+    // ── 가로 치수선 (상단) ──
+    const firstRidgeX = PAD_L;
+    const r0x = {
+      furrowEnd:   firstRidgeX + furrow * SCALE,
+      edgeL:       firstRidgeX + (furrow + ridgeEdge) * SCALE,
+      edgeR:       firstRidgeX + (furrow + ridgeEdge + rowSpacing) * SCALE,
+      ridgeEnd:    firstRidgeX + ridgeW * SCALE,
+    };
+    const dimY = PAD_T - 14;
+
+    // 골 폭
+    h += hDimLine(firstRidgeX, r0x.furrowEnd, dimY, `${furrow}`, C.dim, 'arH');
+    // 두둑 왼 여백
+    h += hDimLine(r0x.furrowEnd, r0x.edgeL, dimY, `${ridgeEdge}`, C.dim, 'arH');
+    // 줄 간격
+    h += hDimLine(r0x.edgeL, r0x.edgeR, dimY, `${rowSpacing}cm`, C.dimGreen, 'arHg');
+    // 두둑 오른 여백
+    h += hDimLine(r0x.edgeR, r0x.ridgeEnd, dimY, `${ridgeEdge}`, C.dim, 'arH');
+
+    // 이랑 1단위 전체 폭
+    const dimY2 = PAD_T - 36;
+    h += hDimLine(firstRidgeX, r0x.ridgeEnd, dimY2, `이랑 1단위 ${ridgeW}cm`, C.dimGreen, 'arHg');
+
+    // ── 범례 ──
+    const legX = PAD_L;
+    const legY = PAD_T + totalH * SCALE + 14;
+    h += `<circle cx="${legX + 7}" cy="${legY}" r="6" fill="${C.plant}" opacity=".85"/>`;
+    h += `<text x="${legX + 17}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">생강 포기</text>`;
+    h += `<rect x="${legX + 70}" y="${legY - 6}" width="12" height="12" fill="${C.ridge}" fill-opacity=".8" rx="2"/>`;
+    h += `<text x="${legX + 86}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">두둑</text>`;
+    h += `<rect x="${legX + 120}" y="${legY - 6}" width="12" height="12" fill="${C.furrow}" fill-opacity=".55" rx="2"/>`;
+    h += `<text x="${legX + 136}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">골(통로)</text>`;
+
+    svg.innerHTML = h;
+  }
+
+  // 가로 치수선 헬퍼
+  function hDimLine(x1, x2, y, text, color, markerId) {
+    const mx = (x1 + x2) / 2;
+    return `
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.2"
+        marker-start="url(#${markerId})" marker-end="url(#${markerId})"/>
+      <text x="${mx}" y="${y - 3}" text-anchor="middle" font-size="9.5"
+        fill="${color}" font-family="inherit">${text}</text>`;
   }
 
   // ── 실용 조언 ──
