@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>유지창 생강농법 — 영농강의</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffdf7;
+      --border: #d6c89a;
+      --accent: #5a7a2e;
+      --accent-light: #7fa844;
+      --accent-dark: #3d5520;
+      --text: #2d2a1e;
+      --muted: #6b6347;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--accent-dark);
+      padding: 0 1rem;
+      padding-top: env(safe-area-inset-top);
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .nav-brand {
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 700;
+      padding: .85rem .5rem .85rem 0;
+      text-decoration: none;
+      white-space: nowrap;
+      margin-right: .5rem;
+    }
+    .nav-links { display: flex; }
+    .nav-links a {
+      color: rgba(255,255,255,.7);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 600;
+      padding: .85rem .75rem;
+      white-space: nowrap;
+      transition: color .15s;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-links a.active { color: #fff; border-bottom-color: var(--accent-light); }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #4a3010 0%, #2a1a08 100%);
+      color: #fff;
+      padding: 2rem 1.25rem 1.75rem;
+      text-align: center;
+    }
+    header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 20px;
+      padding: .25rem .85rem;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      margin-bottom: .75rem;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
+    header .meta {
+      margin-top: .6rem;
+      font-size: .85rem;
+      opacity: .8;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header .meta span::before { content: '· '; }
+    header .meta span:first-child::before { content: ''; }
+
+    /* ── Main ── */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.25rem .85rem calc(2.5rem + env(safe-area-inset-bottom));
+    }
+
+    /* ── Slide viewer ── */
+    .viewer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .slide-stage {
+      background: #1a1a1a;
+      position: relative;
+      cursor: pointer;
+    }
+    .slide-stage img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 75vh;
+      object-fit: contain;
+    }
+    .nav-overlay {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0);
+      transition: background .2s;
+      cursor: pointer;
+      border: none;
+      color: rgba(255,255,255,.7);
+      font-size: 1.5rem;
+      z-index: 2;
+    }
+    .nav-overlay:hover { background: rgba(0,0,0,.25); color: #fff; }
+    .nav-overlay.prev { left: 0; }
+    .nav-overlay.next { right: 0; }
+    .slide-counter {
+      position: absolute;
+      bottom: .6rem;
+      right: .75rem;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      font-size: .75rem;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+      pointer-events: none;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1rem;
+      border-top: 1px solid var(--border);
+      background: #faf8f2;
+    }
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px; height: 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--accent-dark);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all .15s;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+    .ctrl-btn:hover { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+    .ctrl-btn:disabled { opacity: .35; cursor: default; }
+    .ctrl-btn:disabled:hover { background: var(--surface); color: var(--accent-dark); border-color: var(--border); }
+    .page-input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      justify-content: center;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    .page-input-wrap input {
+      width: 3rem;
+      text-align: center;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .35rem .25rem;
+      font-size: .9rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .page-input-wrap input:focus { border-color: var(--accent); }
+
+    /* ── Thumbnails ── */
+    .thumbnails {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: .85rem;
+    }
+    .thumb-title {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: .65rem;
+    }
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: .5rem;
+    }
+    @media (max-width: 400px) {
+      .thumb-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+    }
+    .thumb-item {
+      cursor: pointer;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color .15s, transform .1s;
+      background: #1a1a1a;
+    }
+    .thumb-item:hover { transform: scale(1.04); }
+    .thumb-item.active { border-color: var(--accent-dark); }
+    .thumb-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .thumb-num {
+      text-align: center;
+      font-size: .68rem;
+      color: var(--muted);
+      padding: .2rem 0 .15rem;
+      background: #faf8f2;
+    }
+
+    /* ── Fullscreen modal ── */
+    #fullscreen-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.93);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #fullscreen-modal.open { display: flex; }
+    #fullscreen-modal img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    #fullscreen-modal .close-btn {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: rgba(255,255,255,.15);
+      border: none; color: #fff;
+      font-size: 1.5rem;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #fullscreen-modal .fs-prev,
+    #fullscreen-modal .fs-next {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,.12);
+      border: none; color: #fff;
+      font-size: 1.8rem;
+      width: 48px; height: 64px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #fullscreen-modal .fs-prev { left: .5rem; }
+    #fullscreen-modal .fs-next { right: .5rem; }
+
+    footer {
+      text-align: center;
+      font-size: .72rem;
+      color: var(--muted);
+      padding: .75rem 0 .5rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">🌱 생강밭 플래너</a>
+  <div class="nav-links">
+    <a href="index.html">파종 계산기</a>
+    <a href="lecture.html">이수훈 강사</a>
+    <a href="lecture2.html" class="active">유지창 농법</a>
+  </div>
+</nav>
+
+<header>
+  <div class="badge">영농강의 자료</div>
+  <h1>유지창 생강농법<br>The Golden Root Blueprint</h1>
+  <div class="meta">
+    <span>유지창</span>
+    <span>총 14슬라이드</span>
+    <span>슬라이드를 탭하면 전체화면</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="viewer-card">
+    <div class="slide-stage" onclick="openFullscreen()">
+      <button class="nav-overlay prev" onclick="event.stopPropagation(); go(-1)">&#8249;</button>
+      <img id="main-slide" src="lecture2_images/page_01.jpg" alt="슬라이드 1" loading="eager" />
+      <button class="nav-overlay next" onclick="event.stopPropagation(); go(1)">&#8250;</button>
+      <div class="slide-counter" id="counter">1 / 14</div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="btn-first" onclick="goTo(1)"  title="처음">&#8676;</button>
+      <button class="ctrl-btn" id="btn-prev"  onclick="go(-1)"   title="이전">&#8592;</button>
+      <div class="page-input-wrap">
+        <input type="number" id="page-input" value="1" min="1" max="14"
+               onchange="goTo(parseInt(this.value))" inputmode="numeric" />
+        <span>/ 14</span>
+      </div>
+      <button class="ctrl-btn" id="btn-next"  onclick="go(1)"    title="다음">&#8594;</button>
+      <button class="ctrl-btn" id="btn-last"  onclick="goTo(14)" title="끝">&#8677;</button>
+      <a class="ctrl-btn" href="The_Golden_Root_Blueprint.pdf" download title="PDF 다운로드">&#8659;</a>
+    </div>
+  </div>
+
+  <div class="thumbnails">
+    <div class="thumb-title">전체 슬라이드 목록</div>
+    <div class="thumb-grid" id="thumb-grid"></div>
+  </div>
+
+</main>
+
+<footer>생강밭 플래너 · floodpark/Ginger-Field-Planner</footer>
+
+<div id="fullscreen-modal">
+  <button class="close-btn" onclick="closeFullscreen()">✕</button>
+  <button class="fs-prev" onclick="go(-1)">&#8249;</button>
+  <img id="fs-img" src="" alt="" />
+  <button class="fs-next" onclick="go(1)">&#8250;</button>
+</div>
+
+<script>
+  const TOTAL = 14;
+  let current = 1;
+
+  function imgSrc(n) {
+    return `lecture2_images/page_${String(n).padStart(2,'0')}.jpg`;
+  }
+
+  const grid = document.getElementById('thumb-grid');
+  for (let i = 1; i <= TOTAL; i++) {
+    const div = document.createElement('div');
+    div.className = 'thumb-item' + (i === 1 ? ' active' : '');
+    div.id = `thumb-${i}`;
+    div.onclick = () => goTo(i);
+    div.innerHTML = `<img src="${imgSrc(i)}" alt="슬라이드 ${i}" loading="lazy"/>
+                     <div class="thumb-num">${i}</div>`;
+    grid.appendChild(div);
+  }
+
+  function goTo(n) {
+    n = Math.max(1, Math.min(TOTAL, n));
+    document.getElementById(`thumb-${current}`).classList.remove('active');
+    current = n;
+    const src = imgSrc(current);
+    document.getElementById('main-slide').src = src;
+    document.getElementById('fs-img').src = src;
+    document.getElementById('counter').textContent = `${current} / ${TOTAL}`;
+    document.getElementById('page-input').value = current;
+    document.getElementById(`thumb-${current}`).classList.add('active');
+    document.getElementById(`thumb-${current}`).scrollIntoView({ behavior:'smooth', block:'nearest', inline:'nearest' });
+    document.getElementById('btn-prev').disabled  = current === 1;
+    document.getElementById('btn-first').disabled = current === 1;
+    document.getElementById('btn-next').disabled  = current === TOTAL;
+    document.getElementById('btn-last').disabled  = current === TOTAL;
+  }
+
+  function go(delta) { goTo(current + delta); }
+
+  function openFullscreen() {
+    document.getElementById('fs-img').src = imgSrc(current);
+    document.getElementById('fullscreen-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeFullscreen() {
+    document.getElementById('fullscreen-modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+    if (e.key === 'Escape') closeFullscreen();
+  });
+
+  let touchStartX = 0;
+  document.getElementById('main-slide').addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+  document.getElementById('main-slide').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+  });
+
+  goTo(1);
+</script>
+</body>
+</html>
