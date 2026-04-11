@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>생강밭 플래너 — 파종 면적 계산기</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,55 +28,63 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      /* iOS safe area */
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
     /* ── Header ── */
     header {
       background: var(--accent-dark);
       color: #fff;
-      padding: 2rem 1.5rem 1.5rem;
+      padding: 1.5rem 1.25rem 1.25rem;
+      padding-top: calc(1.5rem + env(safe-area-inset-top));
       text-align: center;
     }
-    header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
-    header p  { margin-top: .4rem; font-size: .9rem; opacity: .8; }
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p  { margin-top: .35rem; font-size: .85rem; opacity: .8; line-height: 1.5; }
 
     /* ── Layout ── */
     main {
-      max-width: 860px;
-      margin: 2rem auto;
-      padding: 0 1rem 3rem;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1rem .85rem calc(2rem + env(safe-area-inset-bottom));
       display: grid;
-      gap: 1.5rem;
+      gap: 1rem;
     }
 
     /* ── Card ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      border-radius: 14px;
+      padding: 1.1rem 1rem;
     }
     .card h2 {
-      font-size: 1rem;
+      font-size: .95rem;
       font-weight: 700;
       color: var(--accent-dark);
       border-bottom: 2px solid var(--accent-light);
-      padding-bottom: .5rem;
-      margin-bottom: 1.2rem;
+      padding-bottom: .45rem;
+      margin-bottom: 1rem;
     }
 
-    /* ── Input Grid ── */
+    /* ── Input Grid — single column on mobile ── */
     .input-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1.2rem;
+      grid-template-columns: 1fr;
+      gap: 1rem;
     }
+    @media (min-width: 480px) {
+      .input-grid { grid-template-columns: 1fr 1fr; }
+    }
+
     .field label {
       display: block;
       font-size: .8rem;
       font-weight: 600;
       color: var(--muted);
-      margin-bottom: .3rem;
+      margin-bottom: .35rem;
     }
     .field .hint {
       font-size: .72rem;
@@ -85,69 +93,78 @@
     }
     .input-wrap {
       display: flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      align-items: stretch;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
       overflow: hidden;
       background: #fff;
     }
-    .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(90,122,46,.15); }
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(90,122,46,.15);
+    }
     .input-wrap input[type="number"] {
       flex: 1;
       border: none;
       outline: none;
-      padding: .55rem .75rem;
-      font-size: 1rem;
+      padding: .7rem .85rem;
+      font-size: 1.05rem;
       font-family: inherit;
       background: transparent;
       min-width: 0;
+      /* iOS: prevent zoom on focus */
+      font-size: max(1rem, 16px);
     }
     .input-wrap .unit {
-      padding: 0 .75rem;
-      font-size: .8rem;
+      padding: 0 .85rem;
+      font-size: .82rem;
       color: var(--muted);
       background: #f7f4ec;
       border-left: 1px solid var(--border);
       white-space: nowrap;
-      height: 100%;
       display: flex;
       align-items: center;
     }
 
     /* ── Slider ── */
     .slider-field { display: flex; flex-direction: column; gap: .3rem; }
-    .slider-row   { display: flex; align-items: center; gap: .75rem; }
+    .slider-row   { display: flex; align-items: center; gap: .6rem; }
     .slider-row input[type="range"] {
       flex: 1;
       accent-color: var(--accent);
       cursor: pointer;
+      height: 28px;       /* larger touch target */
+      min-height: 28px;
     }
     .slider-val {
-      min-width: 4rem;
+      min-width: 3.8rem;
       text-align: right;
-      font-size: .9rem;
-      font-weight: 600;
+      font-size: .95rem;
+      font-weight: 700;
       color: var(--accent-dark);
+      white-space: nowrap;
     }
 
     /* ── Diagram tabs ── */
     .diagram-tabs {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: .5rem;
       margin-bottom: 1rem;
     }
     .diagram-tabs button {
-      flex: 1;
-      padding: .45rem .75rem;
+      padding: .6rem .5rem;
       border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       background: var(--bg);
       color: var(--muted);
-      font-size: .82rem;
+      font-size: .8rem;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       transition: all .15s;
+      min-height: 44px;
+      line-height: 1.3;
     }
     .diagram-tabs button.active {
       background: var(--accent-dark);
@@ -159,25 +176,54 @@
 
     .diagram-wrap {
       overflow-x: auto;
-      margin-top: .5rem;
+      -webkit-overflow-scrolling: touch;
+      margin-top: .25rem;
+      /* subtle scroll hint */
+      background:
+        linear-gradient(to right, var(--surface) 20%, transparent),
+        linear-gradient(to left,  var(--surface) 20%, transparent) 100% 0,
+        radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.08), transparent),
+        radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.08), transparent) 100% 0;
+      background-repeat: no-repeat;
+      background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+      background-attachment: local, local, scroll, scroll;
     }
-    #ridge-svg, #topview-svg { display: block; margin: 0 auto; }
+    /* SVG는 viewBox 기반 반응형 — width/height는 JS에서 제거 */
+    #ridge-svg, #topview-svg {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
 
     /* ── Results ── */
     .results-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
     }
+    /* 작은 화면: 보조 지표는 절반씩, 주요 결과는 전체 너비 */
+    .result-item.full { grid-column: 1 / -1; }
+
     .result-item {
       background: var(--result-bg);
       border: 1px solid var(--result-border);
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      padding: .85rem 1rem;
     }
-    .result-item .r-label { font-size: .78rem; font-weight: 600; color: var(--accent-dark); margin-bottom: .3rem; }
-    .result-item .r-value { font-size: 1.5rem; font-weight: 700; color: var(--accent-dark); line-height: 1.1; }
-    .result-item .r-unit  { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+    .result-item .r-label {
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--accent-dark);
+      margin-bottom: .25rem;
+    }
+    .result-item .r-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+      line-height: 1.1;
+    }
+    .result-item.full .r-value { font-size: 2rem; }
+    .result-item .r-unit  { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
 
     .result-item.highlight {
       background: var(--accent-dark);
@@ -191,25 +237,20 @@
     .advice {
       background: var(--warn-bg);
       border: 1px solid var(--warn-border);
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
       font-size: .85rem;
       color: var(--warn);
-      line-height: 1.7;
+      line-height: 1.75;
     }
     .advice strong { font-weight: 700; }
 
     /* ── Footer ── */
     footer {
       text-align: center;
-      font-size: .75rem;
+      font-size: .72rem;
       color: var(--muted);
-      padding: 1.5rem 0 2rem;
-    }
-
-    @media (max-width: 520px) {
-      header h1 { font-size: 1.35rem; }
-      .result-item .r-value { font-size: 1.2rem; }
+      padding: .75rem 0 .5rem;
     }
   </style>
 </head>
@@ -217,7 +258,7 @@
 
 <header>
   <h1>🌱 생강밭 플래너</h1>
-  <p>종자량과 파종 간격을 입력하면 필요 재배 면적을 자동으로 계산합니다</p>
+  <p>종자량과 파종 간격을 입력하면<br>필요 재배 면적을 자동으로 계산합니다</p>
 </header>
 
 <main>
@@ -229,7 +270,7 @@
       <div class="field">
         <label>총 종자량</label>
         <div class="input-wrap">
-          <input type="number" id="totalSeedKg" value="2100" min="1" step="10" />
+          <input type="number" id="totalSeedKg" value="2100" min="1" step="10" inputmode="numeric" />
           <span class="unit">kg</span>
         </div>
         <div class="hint">예) 210상자 × 10kg = 2,100kg</div>
@@ -237,7 +278,7 @@
       <div class="field">
         <label>종자 1개 분할 무게</label>
         <div class="input-wrap">
-          <input type="number" id="seedCutWeightG" value="50" min="10" max="200" step="5" />
+          <input type="number" id="seedCutWeightG" value="50" min="10" max="200" step="5" inputmode="numeric" />
           <span class="unit">g</span>
         </div>
         <div class="hint">통상 40~60g 사이로 분할</div>
@@ -287,10 +328,10 @@
 
   <!-- ③ 이랑 구조 다이어그램 -->
   <div class="card">
-    <h2>③ 이랑 구조 시각화 (단위: cm)</h2>
+    <h2>③ 이랑 구조 시각화</h2>
     <div class="diagram-tabs">
-      <button id="tab-section" class="active" onclick="switchTab('section')">단면도 — 가로 구조</button>
-      <button id="tab-topview" onclick="switchTab('topview')">평면도 — 포기 간격</button>
+      <button id="tab-section" class="active" onclick="switchTab('section')">단면도<br><small>가로 구조</small></button>
+      <button id="tab-topview" onclick="switchTab('topview')">평면도<br><small>포기 간격</small></button>
     </div>
     <div id="panel-section" class="diagram-panel active">
       <div class="diagram-wrap">
@@ -314,32 +355,30 @@
         <div class="r-unit">개</div>
       </div>
       <div class="result-item">
-        <div class="r-label">이랑 1단위 총 폭</div>
-        <div class="r-value" id="res-ridge-width">120</div>
-        <div class="r-unit">cm (1.2 m)</div>
-      </div>
-      <div class="result-item">
-        <div class="r-label">종자 1개당 점유 면적</div>
+        <div class="r-label">종자 1개당 면적</div>
         <div class="r-value" id="res-per-seed">0.18</div>
         <div class="r-unit">m²/개</div>
       </div>
-      <div class="result-item highlight">
+      <div class="result-item highlight full">
         <div class="r-label">필요 재배 면적</div>
         <div class="r-value" id="res-area-m2">7,560</div>
         <div class="r-unit">m²</div>
       </div>
-      <div class="result-item highlight">
+      <div class="result-item highlight full">
         <div class="r-label">필요 재배 면적</div>
         <div class="r-value" id="res-area-pyeong">2,287</div>
         <div class="r-unit">평</div>
+      </div>
+      <div class="result-item full">
+        <div class="r-label">이랑 1단위 총 폭</div>
+        <div class="r-value" id="res-ridge-width">120</div>
+        <div class="r-unit">cm</div>
       </div>
     </div>
   </div>
 
   <!-- ⑤ 실용 조언 -->
-  <div class="advice" id="advice-box">
-    <!-- JS로 채움 -->
-  </div>
+  <div class="advice" id="advice-box"></div>
 
 </main>
 
@@ -356,17 +395,17 @@
     plantSpacingCm: document.getElementById('plantSpacingCm'),
   };
   const displays = {
-    furrowVal:      document.getElementById('furrowVal'),
-    ridgeEdgeVal:   document.getElementById('ridgeEdgeVal'),
-    rowSpacingVal:  document.getElementById('rowSpacingVal'),
-    plantSpacingVal:document.getElementById('plantSpacingVal'),
+    furrowVal:       document.getElementById('furrowVal'),
+    ridgeEdgeVal:    document.getElementById('ridgeEdgeVal'),
+    rowSpacingVal:   document.getElementById('rowSpacingVal'),
+    plantSpacingVal: document.getElementById('plantSpacingVal'),
   };
 
   // 슬라이더 ↔ 표시값 동기화
-  inputs.furrowWidthCm.addEventListener('input',  () => { displays.furrowVal.textContent      = inputs.furrowWidthCm.value;  recalc(); });
-  inputs.ridgeEdgeCm.addEventListener('input',    () => { displays.ridgeEdgeVal.textContent    = inputs.ridgeEdgeCm.value;    recalc(); });
-  inputs.rowSpacingCm.addEventListener('input',   () => { displays.rowSpacingVal.textContent   = inputs.rowSpacingCm.value;   recalc(); });
-  inputs.plantSpacingCm.addEventListener('input', () => { displays.plantSpacingVal.textContent = inputs.plantSpacingCm.value; recalc(); });
+  inputs.furrowWidthCm.addEventListener('input',  () => { displays.furrowVal.textContent       = inputs.furrowWidthCm.value;  recalc(); });
+  inputs.ridgeEdgeCm.addEventListener('input',    () => { displays.ridgeEdgeVal.textContent     = inputs.ridgeEdgeCm.value;    recalc(); });
+  inputs.rowSpacingCm.addEventListener('input',   () => { displays.rowSpacingVal.textContent    = inputs.rowSpacingCm.value;   recalc(); });
+  inputs.plantSpacingCm.addEventListener('input', () => { displays.plantSpacingVal.textContent  = inputs.plantSpacingCm.value; recalc(); });
   inputs.totalSeedKg.addEventListener('input',    recalc);
   inputs.seedCutWeightG.addEventListener('input', recalc);
 
@@ -379,144 +418,30 @@
     const rowSpacing = parseFloat(inputs.rowSpacingCm.value)   || 0;
     const plantSp    = parseFloat(inputs.plantSpacingCm.value) || 1;
 
-    // 총 종자 개수
-    const totalCount = (totalKg * 1000) / cutG;
-
-    // 이랑 1단위 폭 = 골 + 두둑가장자리×2 + 줄간격
+    const totalCount   = (totalKg * 1000) / cutG;
     const ridgeWidthCm = furrow + ridgeEdge * 2 + rowSpacing;
     const ridgeWidthM  = ridgeWidthCm / 100;
+    const plantSpM     = plantSp / 100;
+    const perSeedM2    = (ridgeWidthM * plantSpM) / 2;
+    const totalM2      = totalCount * perSeedM2;
+    const totalPyeong  = totalM2 * 0.3025;
 
-    // 종자 1개당 면적 (2줄이 ridgeWidthM * plantSpacingM 공간을 나눔)
-    const plantSpM   = plantSp / 100;
-    const perSeedM2  = (ridgeWidthM * plantSpM) / 2;
-
-    // 총 면적
-    const totalM2     = totalCount * perSeedM2;
-    const totalPyeong = totalM2 * 0.3025;
-
-    // 결과 표시
     document.getElementById('res-count').textContent       = fmt(totalCount, 0);
-    document.getElementById('res-ridge-width').textContent = fmt(ridgeWidthCm, 0);
     document.getElementById('res-per-seed').textContent    = fmt(perSeedM2, 4);
     document.getElementById('res-area-m2').textContent     = fmt(totalM2, 0);
     document.getElementById('res-area-pyeong').textContent = fmt(totalPyeong, 0);
-
-    // cm 표시 업데이트
+    document.getElementById('res-ridge-width').textContent = fmt(ridgeWidthCm, 0);
     document.getElementById('res-ridge-width').parentElement.querySelector('.r-unit').textContent =
-      `cm (${(ridgeWidthCm/100).toFixed(2)} m)`;
+      `cm (이랑 1단위 = ${(ridgeWidthCm/100).toFixed(2)}m)`;
 
-    // 다이어그램 업데이트
     drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp);
     drawTopView(furrow, ridgeEdge, rowSpacing, plantSp);
-
-    // 실용 조언
     updateAdvice(totalPyeong);
   }
 
   function fmt(n, dec) {
     if (!isFinite(n)) return '—';
     return n.toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-  }
-
-  // ── SVG 이랑 단면 다이어그램 ──
-  function drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp) {
-    const svg = document.getElementById('ridge-svg');
-    const PAD = 40;       // 좌우 여백
-    const TOP = 30;       // 상단 여백 (라벨용)
-    const BOT = 50;       // 하단 여백 (치수선)
-    const H   = 80;       // 이랑 높이
-    const SCALE = 2.2;    // px/cm
-
-    const totalCm = furrow + ridgeEdge * 2 + rowSpacing;
-    const W = totalCm * SCALE + PAD * 2;
-    const svgH = TOP + H + BOT + 30;
-
-    svg.setAttribute('width', W);
-    svg.setAttribute('height', svgH);
-    svg.setAttribute('viewBox', `0 0 ${W} ${svgH}`);
-
-    // 각 구간 x 위치 (px)
-    const x0 = PAD;                                  // 골 시작
-    const x1 = x0 + furrow * SCALE;                  // 두둑 왼쪽 가장자리 끝
-    const x2 = x1 + ridgeEdge * SCALE;               // 왼쪽 포기 위치
-    const x3 = x2 + rowSpacing * SCALE;              // 오른쪽 포기 위치
-    const x4 = x3 + ridgeEdge * SCALE;               // 두둑 오른쪽 가장자리 끝 (= 골 시작)
-
-    const groundY = TOP + H;
-
-    // 색상
-    const C = {
-      furrow: '#c8b87a',
-      ridge:  '#a0c060',
-      plant:  '#3d5520',
-      dim:    '#8a7a50',
-      text:   '#2d2a1e',
-    };
-
-    let html = '';
-
-    // 배경 (골)
-    html += rect(x0, TOP, x4 - x0, H, C.furrow, 0.4);
-
-    // 두둑 (왼쪽 가장자리 + 줄간격 + 오른쪽 가장자리)
-    html += rect(x1, TOP, x3 - x1, H, C.ridge, 1);
-
-    // 골 치수선
-    html += dimLine(x0, x1, groundY + 15, `${furrow}cm`, C.dim);
-
-    // 두둑 왼 가장자리
-    html += dimLine(x1, x2, groundY + 15, `${ridgeEdge}cm`, C.dim);
-
-    // 줄 간격
-    html += dimLine(x2, x3, groundY + 15, `${rowSpacing}cm`, C.dim);
-
-    // 두둑 오른 가장자리
-    html += dimLine(x3, x4, groundY + 15, `${ridgeEdge}cm`, C.dim);
-
-    // 총 폭
-    html += dimLine(x0, x4, groundY + 38, `전체 ${totalCm}cm`, '#3d5520');
-
-    // 생강 포기 마커
-    html += plantMarker(x2, TOP + H * 0.38, 8, C.plant);
-    html += plantMarker(x3, TOP + H * 0.38, 8, C.plant);
-
-    // 라벨 (위)
-    html += label((x0 + x1) / 2, TOP - 8, '골', C.dim);
-    html += label((x1 + x3) / 2, TOP - 8, '두둑', '#3d5520');
-
-    // 포기 간격 화살표 (수직 방향 설명 텍스트)
-    html += `<text x="${W/2}" y="${svgH - 4}" text-anchor="middle"
-      font-size="11" fill="${C.dim}" font-family="inherit">
-      ↕ 포기 간격(주간 거리): ${plantSp}cm &nbsp;|&nbsp; 이랑 폭: ${totalCm}cm, 2줄 심기
-    </text>`;
-
-    svg.innerHTML = html;
-  }
-
-  function rect(x, y, w, h, fill, opacity) {
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" fill-opacity="${opacity}" rx="3"/>`;
-  }
-
-  function dimLine(x1, x2, y, text, color) {
-    const mx = (x1 + x2) / 2;
-    return `
-      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/>
-      <text x="${mx}" y="${y - 4}" text-anchor="middle" font-size="10" fill="${color}" font-family="inherit">${text}</text>
-      <defs>
-        <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M1,1 L5,3 L1,5" fill="none" stroke="${color}" stroke-width="1"/>
-        </marker>
-      </defs>`;
-  }
-
-  function plantMarker(cx, cy, r, color) {
-    return `
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity=".85"/>
-      <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="9" fill="#fff" font-family="inherit">생</text>`;
-  }
-
-  function label(x, y, text, color) {
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${color}" font-weight="600" font-family="inherit">${text}</text>`;
   }
 
   // ── 탭 전환 ──
@@ -527,147 +452,202 @@
     document.getElementById('panel-topview').classList.toggle('active', name === 'topview');
   }
 
-  // ── SVG 평면도 (탑뷰) ──
-  function drawTopView(furrow, ridgeEdge, rowSpacing, plantSp) {
-    const svg = document.getElementById('topview-svg');
+  // ── SVG 단면 다이어그램 (viewBox 기반 반응형) ──
+  function drawDiagram(furrow, ridgeEdge, rowSpacing, plantSp) {
+    const svg = document.getElementById('ridge-svg');
+    const PAD   = 40;
+    const TOP   = 32;
+    const BOT   = 56;
+    const H     = 90;
+    const SCALE = 2.4;
 
-    // 표시할 이랑 수 / 포기 수 (고정, 샘플 시각화)
-    const RIDGES  = 2;   // 이랑 2개 나란히
-    const PLANTS  = 5;   // 포기 5개 (길이 방향)
-    const SCALE   = 2.2; // px/cm
-    const PAD_L   = 52;  // 왼쪽 여백 (치수선)
-    const PAD_T   = 50;  // 위쪽 여백 (치수선)
-    const PAD_R   = 20;
-    const PAD_B   = 20;
+    const totalCm = furrow + ridgeEdge * 2 + rowSpacing;
+    const VW  = totalCm * SCALE + PAD * 2;
+    const VH  = TOP + H + BOT + 24;
 
-    const ridgeW  = furrow + ridgeEdge * 2 + rowSpacing; // 이랑 1단위 폭 cm
-    const totalW  = ridgeW * RIDGES;                     // 전체 가로 cm
-    const totalH  = plantSp * PLANTS;                    // 전체 세로 cm
+    // viewBox만 설정 — CSS가 너비 조절
+    svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.style.width  = '100%';
+    svg.style.height = 'auto';
 
-    const W  = totalW  * SCALE + PAD_L + PAD_R;
-    const H  = totalH  * SCALE + PAD_T + PAD_B;
+    const x0 = PAD;
+    const x1 = x0 + furrow      * SCALE;
+    const x2 = x1 + ridgeEdge   * SCALE;
+    const x3 = x2 + rowSpacing  * SCALE;
+    const x4 = x3 + ridgeEdge   * SCALE;
+    const groundY = TOP + H;
 
-    svg.setAttribute('width',   Math.max(W, 300));
-    svg.setAttribute('height',  H);
-    svg.setAttribute('viewBox', `0 0 ${Math.max(W, 300)} ${H}`);
-
-    const C = {
-      furrow:  '#d4c080',
-      ridge:   '#b8d878',
-      ridgeDk: '#90b850',
-      plant:   '#3d5520',
-      dim:     '#8a7a50',
-      dimGreen:'#4a7a20',
-      text:    '#2d2a1e',
-    };
-
-    let h = `<defs>
-      <marker id="arH" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M1,1 L5,3 L1,5" fill="none" stroke="${C.dim}" stroke-width="1"/>
+    const C = { furrow:'#c8b87a', ridge:'#a0c060', plant:'#3d5520', dim:'#8a7a50' };
+    let html = `<defs>
+      <marker id="arr" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M1,1.5 L5.5,3.5 L1,5.5" fill="none" stroke="${C.dim}" stroke-width="1.2"/>
       </marker>
-      <marker id="arHg" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M1,1 L5,3 L1,5" fill="none" stroke="${C.dimGreen}" stroke-width="1"/>
+      <marker id="arrG" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M1,1.5 L5.5,3.5 L1,5.5" fill="none" stroke="#3d5520" stroke-width="1.2"/>
       </marker>
     </defs>`;
 
-    // ── 이랑별 배경 그리기 ──
+    html += svgRect(x0, TOP, x4-x0, H, C.furrow, .4);
+    html += svgRect(x1, TOP, x3-x1, H, C.ridge,  1);
+
+    html += dimLine(x0, x1, groundY+16, `${furrow}cm`,    C.dim,    'arr');
+    html += dimLine(x1, x2, groundY+16, `${ridgeEdge}cm`, C.dim,    'arr');
+    html += dimLine(x2, x3, groundY+16, `${rowSpacing}cm`,C.dim,    'arr');
+    html += dimLine(x3, x4, groundY+16, `${ridgeEdge}cm`, C.dim,    'arr');
+    html += dimLine(x0, x4, groundY+40, `전체 ${totalCm}cm`, '#3d5520', 'arrG');
+
+    html += plantMarker(x2, TOP + H*.38, 9, C.plant);
+    html += plantMarker(x3, TOP + H*.38, 9, C.plant);
+
+    html += svgLabel((x0+x1)/2, TOP-10, '골',   C.dim,    12);
+    html += svgLabel((x1+x3)/2, TOP-10, '두둑', '#3d5520', 12);
+
+    html += `<text x="${VW/2}" y="${VH-5}" text-anchor="middle"
+      font-size="11" fill="${C.dim}" font-family="inherit">
+      ↕ 포기 간격: ${plantSp}cm &nbsp;·&nbsp; 2줄 심기
+    </text>`;
+
+    svg.innerHTML = html;
+  }
+
+  // ── SVG 평면도 (viewBox 기반 반응형) ──
+  function drawTopView(furrow, ridgeEdge, rowSpacing, plantSp) {
+    const svg = document.getElementById('topview-svg');
+
+    const RIDGES = 2;
+    const PLANTS = 5;
+    const SCALE  = 2.4;
+    const PAD_L  = 54;
+    const PAD_T  = 52;
+    const PAD_R  = 16;
+    const PAD_B  = 28;
+
+    const ridgeW = furrow + ridgeEdge * 2 + rowSpacing;
+    const totalW = ridgeW * RIDGES;
+    const totalH = plantSp * PLANTS;
+
+    const VW = totalW * SCALE + PAD_L + PAD_R;
+    const VH = totalH * SCALE + PAD_T + PAD_B;
+
+    svg.setAttribute('viewBox', `0 0 ${Math.max(VW, 280)} ${VH}`);
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.style.width  = '100%';
+    svg.style.height = 'auto';
+
+    const C = {
+      furrow: '#d4c080', ridge: '#b8d878',
+      plant: '#3d5520', dim: '#8a7a50', dimG: '#4a7a20', text: '#2d2a1e',
+    };
+
+    let h = `<defs>
+      <marker id="arH" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M1,1.5 L5.5,3.5 L1,5.5" fill="none" stroke="${C.dim}" stroke-width="1.2"/>
+      </marker>
+      <marker id="arHg" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+        <path d="M1,1.5 L5.5,3.5 L1,5.5" fill="none" stroke="${C.dimG}" stroke-width="1.2"/>
+      </marker>
+    </defs>`;
+
     for (let r = 0; r < RIDGES; r++) {
       const rx = PAD_L + r * ridgeW * SCALE;
 
-      // 골 (왼쪽)
-      h += `<rect x="${rx}" y="${PAD_T}" width="${furrow * SCALE}" height="${totalH * SCALE}"
+      h += `<rect x="${rx}" y="${PAD_T}" width="${furrow*SCALE}" height="${totalH*SCALE}"
               fill="${C.furrow}" fill-opacity=".55"/>`;
 
-      // 두둑
       const dx = rx + furrow * SCALE;
-      const dw = (ridgeEdge * 2 + rowSpacing) * SCALE;
-      h += `<rect x="${dx}" y="${PAD_T}" width="${dw}" height="${totalH * SCALE}"
+      const dw = (ridgeEdge*2 + rowSpacing) * SCALE;
+      h += `<rect x="${dx}" y="${PAD_T}" width="${dw}" height="${totalH*SCALE}"
               fill="${C.ridge}" fill-opacity=".8"/>`;
 
-      // 포기 위치 줄 (두 줄)
-      const col1x = rx + (furrow + ridgeEdge)               * SCALE; // 왼쪽 줄
-      const col2x = rx + (furrow + ridgeEdge + rowSpacing)  * SCALE; // 오른쪽 줄
+      const col1x = rx + (furrow + ridgeEdge)              * SCALE;
+      const col2x = rx + (furrow + ridgeEdge + rowSpacing) * SCALE;
 
       for (let p = 0; p < PLANTS; p++) {
-        const py = PAD_T + (p + 0.5) * plantSp * SCALE;
-        // 포기 원
-        h += `<circle cx="${col1x}" cy="${py}" r="7" fill="${C.plant}" opacity=".85"/>`;
-        h += `<text x="${col1x}" y="${py+4}" text-anchor="middle" font-size="8"
-                fill="#fff" font-family="inherit">생</text>`;
-        h += `<circle cx="${col2x}" cy="${py}" r="7" fill="${C.plant}" opacity=".85"/>`;
-        h += `<text x="${col2x}" y="${py+4}" text-anchor="middle" font-size="8"
-                fill="#fff" font-family="inherit">생</text>`;
+        const py = PAD_T + (p + .5) * plantSp * SCALE;
+        h += `<circle cx="${col1x}" cy="${py}" r="8" fill="${C.plant}" opacity=".85"/>`;
+        h += `<text x="${col1x}" y="${py+4}" text-anchor="middle" font-size="8.5" fill="#fff" font-family="inherit">생</text>`;
+        h += `<circle cx="${col2x}" cy="${py}" r="8" fill="${C.plant}" opacity=".85"/>`;
+        h += `<text x="${col2x}" y="${py+4}" text-anchor="middle" font-size="8.5" fill="#fff" font-family="inherit">생</text>`;
 
-        // 포기 간격 세로 치수선 (첫 번째 이랑 왼쪽 줄 기준, 첫 구간만)
         if (r === 0 && p < PLANTS - 1) {
-          const y1 = PAD_T + (p + 0.5) * plantSp * SCALE;
-          const y2 = PAD_T + (p + 1.5) * plantSp * SCALE;
+          const y1 = PAD_T + (p+.5) * plantSp * SCALE;
+          const y2 = PAD_T + (p+1.5) * plantSp * SCALE;
           const dimX = PAD_L - 28;
           h += `<line x1="${dimX}" y1="${y1}" x2="${dimX}" y2="${y2}"
-                  stroke="${C.dimGreen}" stroke-width="1.2"
+                  stroke="${C.dimG}" stroke-width="1.4"
                   marker-start="url(#arHg)" marker-end="url(#arHg)"/>`;
-          if (p === Math.floor((PLANTS - 1) / 2)) {
-            h += `<text x="${dimX - 4}" y="${(y1+y2)/2 + 4}" text-anchor="end"
-                    font-size="10" fill="${C.dimGreen}" font-weight="600"
-                    font-family="inherit">${plantSp}cm</text>`;
-            h += `<text x="${dimX - 4}" y="${(y1+y2)/2 - 5}" text-anchor="end"
-                    font-size="9" fill="${C.dimGreen}"
-                    font-family="inherit">포기</text>`;
+          if (p === Math.floor((PLANTS-1)/2)) {
+            h += `<text x="${dimX-5}" y="${(y1+y2)/2+4}" text-anchor="end"
+                    font-size="11" fill="${C.dimG}" font-weight="700" font-family="inherit">${plantSp}cm</text>`;
+            h += `<text x="${dimX-5}" y="${(y1+y2)/2-6}" text-anchor="end"
+                    font-size="10" fill="${C.dimG}" font-family="inherit">포기</text>`;
           }
         }
       }
 
-      // 세로 구분선 (이랑 경계)
       if (r > 0) {
-        h += `<line x1="${rx}" y1="${PAD_T}" x2="${rx}" y2="${PAD_T + totalH * SCALE}"
+        h += `<line x1="${rx}" y1="${PAD_T}" x2="${rx}" y2="${PAD_T+totalH*SCALE}"
                 stroke="${C.furrow}" stroke-width="1" stroke-dasharray="4,3"/>`;
       }
     }
 
-    // ── 가로 치수선 (상단) ──
-    const firstRidgeX = PAD_L;
-    const r0x = {
-      furrowEnd:   firstRidgeX + furrow * SCALE,
-      edgeL:       firstRidgeX + (furrow + ridgeEdge) * SCALE,
-      edgeR:       firstRidgeX + (furrow + ridgeEdge + rowSpacing) * SCALE,
-      ridgeEnd:    firstRidgeX + ridgeW * SCALE,
+    // 상단 치수선
+    const r0 = {
+      furrowEnd: PAD_L + furrow * SCALE,
+      edgeL:     PAD_L + (furrow + ridgeEdge) * SCALE,
+      edgeR:     PAD_L + (furrow + ridgeEdge + rowSpacing) * SCALE,
+      ridgeEnd:  PAD_L + ridgeW * SCALE,
     };
-    const dimY = PAD_T - 14;
-
-    // 골 폭
-    h += hDimLine(firstRidgeX, r0x.furrowEnd, dimY, `${furrow}`, C.dim, 'arH');
-    // 두둑 왼 여백
-    h += hDimLine(r0x.furrowEnd, r0x.edgeL, dimY, `${ridgeEdge}`, C.dim, 'arH');
-    // 줄 간격
-    h += hDimLine(r0x.edgeL, r0x.edgeR, dimY, `${rowSpacing}cm`, C.dimGreen, 'arHg');
-    // 두둑 오른 여백
-    h += hDimLine(r0x.edgeR, r0x.ridgeEnd, dimY, `${ridgeEdge}`, C.dim, 'arH');
-
-    // 이랑 1단위 전체 폭
+    const dimY  = PAD_T - 14;
     const dimY2 = PAD_T - 36;
-    h += hDimLine(firstRidgeX, r0x.ridgeEnd, dimY2, `이랑 1단위 ${ridgeW}cm`, C.dimGreen, 'arHg');
 
-    // ── 범례 ──
+    h += hDimLine(PAD_L,        r0.furrowEnd, dimY,  `${furrow}`,    C.dim,  'arH');
+    h += hDimLine(r0.furrowEnd, r0.edgeL,     dimY,  `${ridgeEdge}`, C.dim,  'arH');
+    h += hDimLine(r0.edgeL,     r0.edgeR,     dimY,  `${rowSpacing}cm`, C.dimG, 'arHg');
+    h += hDimLine(r0.edgeR,     r0.ridgeEnd,  dimY,  `${ridgeEdge}`, C.dim,  'arH');
+    h += hDimLine(PAD_L,        r0.ridgeEnd,  dimY2, `이랑 ${ridgeW}cm`, C.dimG, 'arHg');
+
+    // 범례
     const legX = PAD_L;
     const legY = PAD_T + totalH * SCALE + 14;
-    h += `<circle cx="${legX + 7}" cy="${legY}" r="6" fill="${C.plant}" opacity=".85"/>`;
-    h += `<text x="${legX + 17}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">생강 포기</text>`;
-    h += `<rect x="${legX + 70}" y="${legY - 6}" width="12" height="12" fill="${C.ridge}" fill-opacity=".8" rx="2"/>`;
-    h += `<text x="${legX + 86}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">두둑</text>`;
-    h += `<rect x="${legX + 120}" y="${legY - 6}" width="12" height="12" fill="${C.furrow}" fill-opacity=".55" rx="2"/>`;
-    h += `<text x="${legX + 136}" y="${legY + 4}" font-size="10" fill="${C.text}" font-family="inherit">골(통로)</text>`;
+    h += `<circle cx="${legX+7}" cy="${legY}" r="6" fill="${C.plant}" opacity=".85"/>`;
+    h += `<text x="${legX+17}" y="${legY+4}" font-size="10" fill="${C.text}" font-family="inherit">생강 포기</text>`;
+    h += `<rect x="${legX+72}" y="${legY-6}" width="12" height="12" fill="${C.ridge}" fill-opacity=".8" rx="2"/>`;
+    h += `<text x="${legX+88}" y="${legY+4}" font-size="10" fill="${C.text}" font-family="inherit">두둑</text>`;
+    h += `<rect x="${legX+122}" y="${legY-6}" width="12" height="12" fill="${C.furrow}" fill-opacity=".55" rx="2"/>`;
+    h += `<text x="${legX+138}" y="${legY+4}" font-size="10" fill="${C.text}" font-family="inherit">골</text>`;
 
     svg.innerHTML = h;
   }
 
-  // 가로 치수선 헬퍼
-  function hDimLine(x1, x2, y, text, color, markerId) {
-    const mx = (x1 + x2) / 2;
+  // ── SVG 헬퍼 함수들 ──
+  function svgRect(x, y, w, h, fill, opacity) {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" fill-opacity="${opacity}" rx="3"/>`;
+  }
+  function dimLine(x1, x2, y, text, color, markerId) {
+    const mx = (x1+x2)/2;
     return `
-      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.2"
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.4"
         marker-start="url(#${markerId})" marker-end="url(#${markerId})"/>
-      <text x="${mx}" y="${y - 3}" text-anchor="middle" font-size="9.5"
-        fill="${color}" font-family="inherit">${text}</text>`;
+      <text x="${mx}" y="${y-5}" text-anchor="middle" font-size="10.5" fill="${color}" font-family="inherit">${text}</text>`;
+  }
+  function hDimLine(x1, x2, y, text, color, markerId) {
+    const mx = (x1+x2)/2;
+    return `
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="1.4"
+        marker-start="url(#${markerId})" marker-end="url(#${markerId})"/>
+      <text x="${mx}" y="${y-4}" text-anchor="middle" font-size="10" fill="${color}" font-family="inherit">${text}</text>`;
+  }
+  function plantMarker(cx, cy, r, color) {
+    return `
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity=".85"/>
+      <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="9" fill="#fff" font-family="inherit">생</text>`;
+  }
+  function svgLabel(x, y, text, color, size) {
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="${size}" fill="${color}" font-weight="700" font-family="inherit">${text}</text>`;
   }
 
   // ── 실용 조언 ──
