@@ -33,12 +33,46 @@
       padding-right: env(safe-area-inset-right);
     }
 
+    /* ── Nav ── */
+    nav {
+      background: var(--accent-dark);
+      padding: 0 1rem;
+      padding-top: env(safe-area-inset-top);
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .nav-brand {
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 700;
+      padding: .85rem .5rem .85rem 0;
+      text-decoration: none;
+      white-space: nowrap;
+      margin-right: .5rem;
+    }
+    .nav-links { display: flex; }
+    .nav-links a {
+      color: rgba(255,255,255,.7);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 600;
+      padding: .85rem .75rem;
+      white-space: nowrap;
+      transition: color .15s;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-links a.active { color: #fff; border-bottom-color: var(--accent-light); }
+
     /* ── Header ── */
     header {
       background: var(--accent-dark);
       color: #fff;
       padding: 1.5rem 1.25rem 1.25rem;
-      padding-top: calc(1.5rem + env(safe-area-inset-top));
       text-align: center;
     }
     header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
@@ -255,6 +289,14 @@
   </style>
 </head>
 <body>
+
+<nav>
+  <a href="index.html" class="nav-brand">🌱 생강밭 플래너</a>
+  <div class="nav-links">
+    <a href="index.html" class="active">파종 계산기</a>
+    <a href="lecture.html">영농강의</a>
+  </div>
+</nav>
 
 <header>
   <h1>🌱 생강밭 플래너</h1>
